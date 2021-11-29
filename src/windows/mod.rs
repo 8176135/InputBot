@@ -91,14 +91,18 @@ impl MouseWheel {
 }
 
 pub fn handle_input_events() {
+    handle_input_events_custom_poll();
+    let mut msg: MSG = unsafe { MaybeUninit::zeroed().assume_init() };
+    unsafe { GetMessageW(&mut msg, 0 as HWND, 0, 0) };
+}
+
+pub fn handle_input_events_custom_poll() {
     if !MOUSE_BINDS.lock().unwrap().is_empty() {
         set_hook(WH_MOUSE_LL, &*MOUSE_HHOOK, mouse_proc);
     };
     if !KEYBD_BINDS.lock().unwrap().is_empty() {
         set_hook(WH_KEYBOARD_LL, &*KEYBD_HHOOK, keybd_proc);
     };
-    let mut msg: MSG = unsafe { MaybeUninit::zeroed().assume_init() };
-    unsafe { GetMessageW(&mut msg, 0 as HWND, 0, 0) };
 }
 
 unsafe extern "system" fn keybd_proc(code: c_int, w_param: WPARAM, l_param: LPARAM) -> LRESULT {
@@ -148,7 +152,7 @@ unsafe extern "system" fn mouse_proc(code: c_int, w_param: WPARAM, l_param: LPAR
                 XBUTTON2 => Some(MouseButton::X2Button),
                 _ => None,
             }
-        },
+        }
         _ => None,
     } {
         if let Some(bind) = MOUSE_BINDS.lock().unwrap().get_mut(&event) {
